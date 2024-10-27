@@ -1,0 +1,4 @@
+C:/Users/deeza/Desktop/book_pdf_part_I/build/CMakeFiles/glad.dir
+C:/Users/deeza/Desktop/book_pdf_part_I/build/CMakeFiles/Game.dir
+C:/Users/deeza/Desktop/book_pdf_part_I/build/CMakeFiles/edit_cache.dir
+C:/Users/deeza/Desktop/book_pdf_part_I/build/CMakeFiles/rebuild_cache.dir
