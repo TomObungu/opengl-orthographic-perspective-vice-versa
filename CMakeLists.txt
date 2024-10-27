@@ -19,11 +19,11 @@ file(GLOB_RECURSE src
     "src/main.cpp"
 )
 
-add_executable(Game ${src})
-set_target_properties(Game PROPERTIES CXX_STANDARD 23 CXX_STANDARD_REQUIRED YES)
+add_executable(main ${src})
+set_target_properties(main PROPERTIES CXX_STANDARD 23 CXX_STANDARD_REQUIRED YES)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR})
-set_target_properties(Game PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR})
+set_target_properties(main PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR})
 
-target_include_directories(Game PRIVATE ${PROJECT_SOURCE_DIR}/include/glm)
+target_include_directories(main PRIVATE ${PROJECT_SOURCE_DIR}/include/glm)
 
-target_link_libraries(Game PRIVATE SDL2main SDL2 glad)
+target_link_libraries(main PRIVATE SDL2main SDL2 glad)

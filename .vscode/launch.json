@@ -5,7 +5,7 @@
             "name": "Run Game",
             "type": "cppvsdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/Game.exe",
+            "program": "${workspaceFolder}/main.exe",
             "args": [],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",

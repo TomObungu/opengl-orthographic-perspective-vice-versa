@@ -2,10 +2,10 @@
 	"artifacts" : 
 	[
 		{
-			"path" : "C:/Users/deeza/Desktop/book_pdf_part_I/Game.exe"
+			"path" : "C:/Users/deeza/Desktop/book_pdf_part_I/main.exe"
 		},
 		{
-			"path" : "C:/Users/deeza/Desktop/book_pdf_part_I/Game.pdb"
+			"path" : "C:/Users/deeza/Desktop/book_pdf_part_I/main.pdb"
 		}
 	],
 	"backtrace" : 1,
@@ -100,7 +100,7 @@
 			"id" : "glad::@6890427a1f51a3e7e1df"
 		}
 	],
-	"id" : "Game::@6890427a1f51a3e7e1df",
+	"id" : "main::@6890427a1f51a3e7e1df",
 	"link" : 
 	{
 		"commandFragments" : 
@@ -135,8 +135,8 @@
 		],
 		"language" : "CXX"
 	},
-	"name" : "Game",
-	"nameOnDisk" : "Game.exe",
+	"name" : "main",
+	"nameOnDisk" : "main.exe",
 	"paths" : 
 	{
 		"build" : ".",

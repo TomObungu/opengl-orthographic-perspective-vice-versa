@@ -40,16 +40,16 @@
 			[
 				{
 					"directoryIndex" : 0,
-					"id" : "Game::@6890427a1f51a3e7e1df",
-					"jsonFile" : "target-Game-Debug-411dddb07cd8f14d4376.json",
-					"name" : "Game",
+					"id" : "glad::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-glad-Debug-0a017696886250cb2c44.json",
+					"name" : "glad",
 					"projectIndex" : 0
 				},
 				{
 					"directoryIndex" : 0,
-					"id" : "glad::@6890427a1f51a3e7e1df",
-					"jsonFile" : "target-glad-Debug-0a017696886250cb2c44.json",
-					"name" : "glad",
+					"id" : "main::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-main-Debug-9c41689a1522077f1852.json",
+					"name" : "main",
 					"projectIndex" : 0
 				}
 			]

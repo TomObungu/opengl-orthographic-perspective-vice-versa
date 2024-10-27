@@ -7,8 +7,8 @@
 },
 {
   "directory": "C:/Users/deeza/Desktop/book_pdf_part_I/build",
-  "command": "C:\\msys64\\ucrt64\\bin\\g++.exe  @CMakeFiles/Game.dir/includes_CXX.rsp -g -std=gnu++23 -o CMakeFiles\\Game.dir\\src\\main.cpp.obj -c C:\\Users\\deeza\\Desktop\\book_pdf_part_I\\src\\main.cpp",
+  "command": "C:\\msys64\\ucrt64\\bin\\g++.exe  @CMakeFiles/main.dir/includes_CXX.rsp -g -std=gnu++23 -o CMakeFiles\\main.dir\\src\\main.cpp.obj -c C:\\Users\\deeza\\Desktop\\book_pdf_part_I\\src\\main.cpp",
   "file": "C:/Users/deeza/Desktop/book_pdf_part_I/src/main.cpp",
-  "output": "CMakeFiles/Game.dir/src/main.cpp.obj"
+  "output": "CMakeFiles/main.dir/src/main.cpp.obj"
 }
 ]

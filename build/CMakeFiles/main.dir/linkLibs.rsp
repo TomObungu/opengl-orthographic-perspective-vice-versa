@@ -1,0 +1,1 @@
+ "C:/Users/deeza/Desktop/book_pdf_part_I/include/SDL2-2.30.5/lib/x64/SDL2main.lib" "C:/Users/deeza/Desktop/book_pdf_part_I/include/SDL2-2.30.5/lib/x64/SDL2.lib" libglad.a -lkernel32 -luser32 -lgdi32 -lwinspool -lshell32 -lole32 -loleaut32 -luuid -lcomdlg32 -ladvapi32 
