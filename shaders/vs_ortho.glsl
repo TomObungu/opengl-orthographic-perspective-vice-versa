@@ -6,8 +6,9 @@ out vec2 TexCoord;
 
 uniform mat4 model;
 uniform mat4 projection;
+uniform float time; 
 
 void main() {
     gl_Position = projection * model * vec4(position, 1.0);
-    TexCoord = texCoord;
+    TexCoord =  texCoord + vec2(time * 0.1, time * 0.1); // Adjust speed by changing the multiplier
 }

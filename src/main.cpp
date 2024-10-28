@@ -27,7 +27,7 @@ std::string loadShaderSource(const std::string& filepath) {
 unsigned int compileShader(const std::string& filepath, GLenum shaderType) {
     std::string shaderCode = loadShaderSource(filepath);
     const char* shaderSource = shaderCode.c_str();
-    
+
     unsigned int shader = glCreateShader(shaderType);
     glShaderSource(shader, 1, &shaderSource, nullptr);
     glCompileShader(shader);
@@ -43,15 +43,29 @@ unsigned int compileShader(const std::string& filepath, GLenum shaderType) {
 }
 
 int main(int argc, char* argv[]) {
+    int windowWidth, windowHeight;
+    SDL_DisplayMode displayMode;
     SDL_Init(SDL_INIT_EVERYTHING);
-    SDL_Window* window = SDL_CreateWindow("Perspective vs Orthographic", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 800, 600, SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE);
+     if (SDL_GetDesktopDisplayMode(0, &displayMode) != 0)
+    {
+        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Could not get display mode: %s", SDL_GetError());
+    }
+    else
+    {
+        windowWidth = displayMode.w;
+        windowHeight = displayMode.h;
+    }
+
+    // Create the window in fullscreen mode
+    SDL_Window* window= SDL_CreateWindow("Perspective vs Orthographic", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
+        windowWidth, windowHeight, SDL_WINDOW_OPENGL | SDL_WINDOW_FULLSCREEN | SDL_WINDOW_RESIZABLE);
     SDL_GLContext context = SDL_GL_CreateContext(window);
     gladLoadGLLoader((GLADloadproc)SDL_GL_GetProcAddress);
 
     // Shader compilation setup...
-    unsigned int vertexShaderOrthographic = compileShader("src\\vs_ortho.glsl", GL_VERTEX_SHADER);
-    unsigned int fragmentShader = compileShader("src\\fs.glsl", GL_FRAGMENT_SHADER);
-    unsigned int vertexShaderPerspective = compileShader("src\\vs_perspective.glsl", GL_VERTEX_SHADER);
+    unsigned int vertexShaderOrthographic = compileShader("shaders\\vs_ortho.glsl", GL_VERTEX_SHADER);
+    unsigned int fragmentShader = compileShader("shaders\\fs.glsl", GL_FRAGMENT_SHADER);
+    unsigned int vertexShaderPerspective = compileShader("shaders\\vs_perspective.glsl", GL_VERTEX_SHADER);
 
     unsigned int shaderProgramOrthographic = glCreateProgram();
     glAttachShader(shaderProgramOrthographic, vertexShaderOrthographic);
@@ -68,25 +82,34 @@ int main(int argc, char* argv[]) {
     glDeleteShader(vertexShaderPerspective);
 
     // Vertex data for a textured quad
-    float vertices[] = {
-        // positions         // texture coords
-        -0.5f, -0.5f, 0.0f, 0.0f, 0.0f,
-         0.5f, -0.5f, 0.0f, 1.0f, 0.0f,
-         0.5f,  0.5f, 0.0f, 1.0f, 1.0f,
-        -0.5f,  0.5f, 0.0f, 0.0f, 1.0f
+    float vertices[2][20] = {
+
+        // Orthographic projection quad
+        {-1.0f, -1.0, 0.0f,  0.0f, 0.0f,  // Bottom-left
+        1.0f, -1.0, 0.0f,  1.0f, 0.0f,  // Bottom-right
+        1.0f,  1.0, 0.0f,  1.0f, 1.0f,  // Top-right
+        -1.0f,  1.0, 0.0f,  0.0f, 1.0f},   // Top-left
+
+        // Perspective projection quad
+        // positions           // texture coordinates
+        {-2.0f, -1.125, 0.0f,  0.0f, 0.0f,  // Bottom-left
+        2.0f, -1.125, 0.0f,  1.0f, 0.0f,  // Bottom-right
+        2.0f,  1.125, 0.0f,  1.0f, 1.0f,  // Top-right
+        -2.0f,  1.125, 0.0f,  0.0f, 1.0f}, // Top-left
     };
+
     unsigned int indices[] = { 0, 1, 2, 2, 3, 0 };
 
     // OpenGL buffers setup
-    unsigned int VAO[2], VBO, EBO;
+    unsigned int VAO[2], VBO[2], EBO;
     glGenVertexArrays(2, VAO);
-    glGenBuffers(1, &VBO);
+    glGenBuffers(2, VBO);
     glGenBuffers(1, &EBO);
 
     for (int i = 0; i < 2; i++) {
         glBindVertexArray(VAO[i]);
-        glBindBuffer(GL_ARRAY_BUFFER, VBO);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+        glBindBuffer(GL_ARRAY_BUFFER, VBO[i]);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(vertices[i]), vertices[i], GL_STATIC_DRAW);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 
@@ -102,71 +125,118 @@ int main(int argc, char* argv[]) {
     glBindTexture(GL_TEXTURE_2D, texture);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
+     stbi_set_flip_vertically_on_load(true);
+
     int width, height, nrChannels;
-    unsigned char* data = stbi_load("src\\texture.jpg", &width, &height, &nrChannels, 0);
+    unsigned char* data = stbi_load("src\\texture.png", &width, &height, &nrChannels, 0);
+    std::cout << width << height;
     if (data) {
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
         glGenerateMipmap(GL_TEXTURE_2D);
     }
     stbi_image_free(data);
 
     bool running = true;
     float angle = 0.0f;
+
+    // Disabling depth testing means that things get rendered in the order you render them
     glEnable(GL_DEPTH_TEST);
+    glDisable((GL_DEPTH_TEST));
 
-    while (running) {
-        SDL_Event event;
-        while (SDL_PollEvent(&event)) {
-            if (event.type == SDL_QUIT) running = false;
-        }
-
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, texture);
-
-        // Orthographic projection setup
-        glm::mat4 projOrthographic = glm::ortho(-1.0f, 1.0f, -1.0f, 1.0f); // Orthographic projection matrix
-        glm::mat4 modelOrthographic = glm::mat4(1.0f);
-        modelOrthographic = glm::rotate(modelOrthographic, angle, glm::vec3(0.0f, 0.0f, 1.0f)); // Rotate around the Z-axis
-        modelOrthographic = glm::translate(modelOrthographic, glm::vec3(0.0f, 0.0f, 0.0f)); // Move to the center side and set z to -1
-
-        glUseProgram(shaderProgramOrthographic);
-        glUniformMatrix4fv(glGetUniformLocation(shaderProgramOrthographic, "model"), 1, GL_FALSE, glm::value_ptr(modelOrthographic));
-        glUniformMatrix4fv(glGetUniformLocation(shaderProgramOrthographic, "projection"), 1, GL_FALSE, glm::value_ptr(projOrthographic));
-
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // Clear color and depth buffer
-        glBindTexture(GL_TEXTURE_2D, texture);
-        glBindVertexArray(VAO[0]);
-        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0); // Draw orthographic quad
-
-
-        // **Perspective Projection Object Rendering**
-        glUseProgram(shaderProgramPerspective);
-        glm::mat4 projPerspective = glm::perspective(glm::radians(45.0f), 800.0f / 600.0f, 0.1f, 100.0f);
-        glm::mat4 viewPerspective = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -1.5f));
-
-        // Time-based rotation for perspective quad
-        float rotationAngle = SDL_GetTicks() / 1000.0f * glm::radians(50.0f);
-        glm::mat4 modelPerspective = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 0.1f)); // Move left and front
-        modelPerspective = glm::rotate(modelPerspective, rotationAngle, glm::vec3(0.0f, 1.0f, 0.0f)); // Rotate around Y-axis
-
-        glUniformMatrix4fv(glGetUniformLocation(shaderProgramPerspective, "model"), 1, GL_FALSE, glm::value_ptr(modelPerspective));
-        glUniformMatrix4fv(glGetUniformLocation(shaderProgramPerspective, "view"), 1, GL_FALSE, glm::value_ptr(viewPerspective));
-        glUniformMatrix4fv(glGetUniformLocation(shaderProgramPerspective, "projection"), 1, GL_FALSE, glm::value_ptr(projPerspective));
-        glUniform1i(glGetUniformLocation(shaderProgramPerspective, "texture1"), 0);
-
-        glBindVertexArray(VAO[1]);
-        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-
-        SDL_GL_SwapWindow(window);
+while (running) {
+    SDL_Event event;
+    while (SDL_PollEvent(&event)) {
+        if (event.type == SDL_QUIT) running = false;
     }
+
+    // Clear the color and depth buffers
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, texture);
+
+    // Compute time in seconds
+    float timeValue = SDL_GetTicks() / 1000.0f;
+
+    glUseProgram(shaderProgramOrthographic);
+
+    // Set up orthographic projection to map directly to window dimensions
+    glm::mat4 projOrtho = glm::ortho(0.0f, static_cast<float>(windowWidth), 0.0f, static_cast<float>(windowHeight), -1.0f, 1.0f);
+
+    glm::mat4 modelOrtho = glm::mat4(1.0f);
+
+    // Step 1: Translate to the center of the screen
+    modelOrtho = glm::translate(modelOrtho, glm::vec3(windowWidth / 2.0f, windowHeight / 2.0f, 0.0f));
+
+    modelOrtho = glm::scale(modelOrtho, glm::vec3(windowWidth, windowHeight, 0.0f));
+
+    // Step 2: Scale the quad to 50% size
+    modelOrtho = glm::scale(modelOrtho, glm::vec3(0.5f, 0.5f, 1.0f));
+
+    // Pass the model matrix to the shader
+    glUniformMatrix4fv(glGetUniformLocation(shaderProgramOrthographic, "model"), 1, GL_FALSE, glm::value_ptr(modelOrtho));
+
+    // Set uniforms for the shader
+    int projLoc = glGetUniformLocation(shaderProgramOrthographic, "projection");
+    int modelLoc = glGetUniformLocation(shaderProgramOrthographic, "model");
+
+    if (projLoc != -1) {
+        glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(projOrtho));
+    }
+    if (modelLoc != -1) {
+        glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(modelOrtho));
+    }
+
+    GLint timeLocOrthoggraphic= glGetUniformLocation(shaderProgramOrthographic, "time");
+    glUniform1f(timeLocOrthoggraphic, timeValue);
+
+    // Set texture uniform
+    glUniform1i(glGetUniformLocation(shaderProgramOrthographic, "texture1"), 0);
+
+    // Draw the quad
+    glBindVertexArray(VAO[0]);
+    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+
+    // **Perspective Projection Object Rendering**
+
+    glm::mat4 projPerspective = glm::mat4(1.0f);  // Identity matrix for projection
+    glm::mat4 viewPerspective = glm::mat4(1.0f);  // Identity matrix for view
+
+    glUseProgram(shaderProgramPerspective);
+    projPerspective = glm::perspective(glm::radians(45.0f), 800.0f / 600.0f, 0.1f, 100.0f);
+    viewPerspective = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -2.0f));
+
+    // Model matrix with rotation and translation
+    float rotationAngle = timeValue * glm::radians(50.0f);
+    glm::mat4 modelPerspective = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 0.0f));
+    modelPerspective = glm::scale(modelPerspective, glm::vec3(0.5f, 0.5f, 1.0f));
+    modelPerspective = glm::rotate(modelPerspective, rotationAngle, glm::vec3(0.0f, 1.0f, 0.0f));
+
+    // Pass time uniform to perspective shader
+    GLint timeLocPerspective = glGetUniformLocation(shaderProgramPerspective, "time");
+    glUniform1f(timeLocPerspective, timeValue);
+
+    // Set other uniforms for perspective shader
+    glUniformMatrix4fv(glGetUniformLocation(shaderProgramPerspective, "model"), 1, GL_FALSE, glm::value_ptr(modelPerspective));
+    glUniformMatrix4fv(glGetUniformLocation(shaderProgramPerspective, "view"), 1, GL_FALSE, glm::value_ptr(viewPerspective));
+    glUniformMatrix4fv(glGetUniformLocation(shaderProgramPerspective, "projection"), 1, GL_FALSE, glm::value_ptr(projPerspective));
+    glUniform1i(glGetUniformLocation(shaderProgramPerspective, "texture1"), 0);
+
+    // Draw perspective quad
+    glBindVertexArray(VAO[1]);
+    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+
+    glBindVertexArray(0);
+
+    // Swap buffers
+    SDL_GL_SwapWindow(window);
+}
 
     // Cleanup resources
     glDeleteVertexArrays(2, VAO);
-    glDeleteBuffers(1, &VBO);
+    glDeleteBuffers(2, VBO);
     glDeleteBuffers(1, &EBO);
     glDeleteProgram(shaderProgramOrthographic);
     glDeleteProgram(shaderProgramPerspective);
