@@ -10,6 +10,7 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
+// Function to load shader file
 std::string loadShaderSource(const std::string& filepath) {
     std::ifstream shaderFile(filepath);
     std::stringstream shaderStream;
@@ -23,7 +24,7 @@ std::string loadShaderSource(const std::string& filepath) {
 
     return shaderStream.str();
 }
-
+// Function to compile shader GLSL files
 unsigned int compileShader(const std::string& filepath, GLenum shaderType) {
     std::string shaderCode = loadShaderSource(filepath);
     const char* shaderSource = shaderCode.c_str();
@@ -99,14 +100,14 @@ int main(int argc, char* argv[]) {
         -2.0f,  1.125, 0.0f,  0.0f, 1.0f}, // Top-left
     };
     
-    // Index buffer to save manual definition and repetition of coordinates within the vertex specification#
+    // Index buffer to save manual definition and repetition of coordinates within the vertex specification
     // Used to make a rectangle out of triangles
     // Coordinates of the triangle corners are draw in this order :
         // corners : bottom left, bottom right, top right, top right(2nd triangle), top left (2nd triangle), bottom left (2nd triangle)
     unsigned int indices[] = { 0, 1, 2, 2, 3, 0 };
 
     // OpenGL buffers setup
-    // Set up Vertex Attribute Objects, Vertex Buffer Objects and Index/Element buffers for the data ina rrays
+    // Set up Vertex Attribute Objects, Vertex Buffer Objects and Index/Element buffers for the data in arrays
     unsigned int VAO[2], VBO[2], EBO;
     glGenVertexArrays(2, VAO);
     glGenBuffers(2, VBO);
@@ -119,7 +120,7 @@ int main(int argc, char* argv[]) {
         glBindBuffer(GL_ARRAY_BUFFER, VBO[i]);
         // Set way data is proccesed to STATIC_DRAW as data does not change however it used frequently
         glBufferData(GL_ARRAY_BUFFER, sizeof(vertices[i]), vertices[i], GL_STATIC_DRAW);
-        // Bind buffer contain the indices for the vertex datat
+        // Bind buffer contain the indices for the vertex data
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 
@@ -143,6 +144,8 @@ int main(int argc, char* argv[]) {
 
      stbi_set_flip_vertically_on_load(true);
 
+    //Load texture using stdbi library
+    // Must use GL_RGBA as texture is PNG format
     int width, height, nrChannels;
     unsigned char* data = stbi_load("src\\texture.png", &width, &height, &nrChannels, 0);
     std::cout << width << height;
@@ -157,7 +160,9 @@ int main(int argc, char* argv[]) {
 
     // Disabling depth testing means that things get rendered in the order you render them
     glEnable(GL_DEPTH_TEST);
+    // Enabling means the perspective will phase through the orthographic due to ovelapping z coordinates
 
+// Render loop
 while (running) {
     SDL_Event event;
     while (SDL_PollEvent(&event)) {
@@ -172,46 +177,9 @@ while (running) {
     // Compute time in seconds
     float timeValue = SDL_GetTicks() / 1000.0f;
 
-
-    // **Perspective Projection Object Rendering**
-
-    glm::mat4 projPerspective = glm::mat4(1.0f);  // Identity matrix for projection
-    glm::mat4 viewPerspective = glm::mat4(1.0f);  // Identity matrix for view
-
-    // Use perspective projection shader
-    glUseProgram(shaderProgramPerspective);
-    // Set up perspective projection matrix, set up fov, width/hieght, near/far plane
-    projPerspective = glm::perspective(glm::radians(45.0f), 800.0f / 600.0f, 0.1f, 100.0f);
-    // Set up view matrix and translate the projection matrix in the reverse direction by 2 units
-    viewPerspective = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -2.0f));
-
+    // **Orthographic Projection Object Rendering**
     
-    // increment rotation angle by 50 degrees (convert degrees to radians)
-    float rotationAngle = timeValue * glm::radians(50.0f);
-    // Apply translation to objects by multiplying the projection by model matrix
-    // First application - A translation of the object's vertices that are multiplied by the perspective matrix to the center of the screen
-    glm::mat4 modelPerspective = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 0.0f));
-    // Second application - A scale of the object's vertices that are multiplied by the perspective matrixby scale factor 0.5
-    modelPerspective = glm::scale(modelPerspective, glm::vec3(0.5f, 0.5f, 1.0f));
-    // Third application - Rotate the oobject's vertices that are multiplied by the perspective matrix around the y-axis continually by time
-    modelPerspective = glm::rotate(modelPerspective, rotationAngle, glm::vec3(0.0f, 1.0f, 0.0f));
-
-    // Pass time uniform to perspective shader; Update the time uniform 
-    GLint timeLocPerspective = glGetUniformLocation(shaderProgramPerspective, "time");
-    glUniform1f(timeLocPerspective, timeValue);
-
-    // Set other uniforms for perspective vertex shader shader
-    glUniformMatrix4fv(glGetUniformLocation(shaderProgramPerspective, "model"), 1, GL_FALSE, glm::value_ptr(modelPerspective));
-    glUniformMatrix4fv(glGetUniformLocation(shaderProgramPerspective, "view"), 1, GL_FALSE, glm::value_ptr(viewPerspective));
-    glUniformMatrix4fv(glGetUniformLocation(shaderProgramPerspective, "projection"), 1, GL_FALSE, glm::value_ptr(projPerspective));
-    // Both the perspective and orthographic shaders are using the same fragment shaders
-    glUniform1i(glGetUniformLocation(shaderProgramPerspective, "texture1"), 0);
-
-    // Draw perspective quad; Textures bound will be rendered here via the fragment shader
-    glBindVertexArray(VAO[1]);
-    // Render the triangles that make up quad
-    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-
+    // Use orthgraphic projection shader
     glUseProgram(shaderProgramOrthographic);
 
     // Set up orthographic projection matrix to map directly to window dimensions
@@ -256,6 +224,45 @@ while (running) {
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
     glBindVertexArray(0);   
+
+    // **Perspective Projection Object Rendering**
+
+    glm::mat4 projPerspective = glm::mat4(1.0f);  // Identity matrix for projection
+    glm::mat4 viewPerspective = glm::mat4(1.0f);  // Identity matrix for view
+
+    // Use perspective projection shader
+    glUseProgram(shaderProgramPerspective);
+    // Set up perspective projection matrix, set up fov, width/hieght, near/far plane
+    projPerspective = glm::perspective(glm::radians(45.0f), 800.0f / 600.0f, 0.1f, 100.0f);
+    // Set up view matrix and translate the projection matrix in the reverse direction by 2 units
+    viewPerspective = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -2.0f));
+
+    // increment rotation angle by 50 degrees (convert degrees to radians)
+    float rotationAngle = timeValue * glm::radians(50.0f);
+    // Apply translation to objects by multiplying the projection by model matrix
+    // First application - A translation of the object's vertices that are multiplied by the perspective matrix to the center of the screen
+    glm::mat4 modelPerspective = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 0.0f));
+    // Second application - A scale of the object's vertices that are multiplied by the perspective matrixby scale factor 0.5
+    modelPerspective = glm::scale(modelPerspective, glm::vec3(0.5f, 0.5f, 1.0f));
+    // Third application - Rotate the oobject's vertices that are multiplied by the perspective matrix around the y-axis continually by time
+    modelPerspective = glm::rotate(modelPerspective, rotationAngle, glm::vec3(0.0f, 1.0f, 0.0f));
+
+    // Pass time uniform to perspective shader; Update the time uniform 
+    GLint timeLocPerspective = glGetUniformLocation(shaderProgramPerspective, "time");
+    glUniform1f(timeLocPerspective, timeValue);
+
+    // Set other uniforms for perspective vertex shader shader
+    glUniformMatrix4fv(glGetUniformLocation(shaderProgramPerspective, "model"), 1, GL_FALSE, glm::value_ptr(modelPerspective));
+    glUniformMatrix4fv(glGetUniformLocation(shaderProgramPerspective, "view"), 1, GL_FALSE, glm::value_ptr(viewPerspective));
+    glUniformMatrix4fv(glGetUniformLocation(shaderProgramPerspective, "projection"), 1, GL_FALSE, glm::value_ptr(projPerspective));
+    // Both the perspective and orthographic shaders are using the same fragment shaders
+    glUniform1i(glGetUniformLocation(shaderProgramPerspective, "texture1"), 0);
+
+    // Draw perspective quad; Textures bound will be rendered here via the fragment shader
+    glBindVertexArray(VAO[1]);
+    // Render the triangles that make up quad
+    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+
     // Swap buffers
     SDL_GL_SwapWindow(window);
 }
